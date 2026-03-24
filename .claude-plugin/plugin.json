@@ -1,0 +1,12 @@
+{
+  "name": "wecom-claude-bot",
+  "description": "企业微信 × Claude Code Bot —— 通过企业微信智能机器人长连接与 Claude Code Agent 交互，支持流式回复、多用户会话隔离。Claude Code 启动时自动上线，退出时自动下线。",
+  "version": "1.0.0",
+  "author": {
+    "name": "connortang",
+    "email": "connortang@tencent.com"
+  },
+  "repository": "https://github.com/TSorzZZ/wecom_claude_bot",
+  "license": "MIT",
+  "keywords": ["wecom", "wechat-work", "claude", "bot", "agent"]
+}

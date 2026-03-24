@@ -31,3 +31,7 @@ Thumbs.db
 
 # 日志
 *.log
+
+# Bot 运行时文件
+.bot.pid
+.bot.log
