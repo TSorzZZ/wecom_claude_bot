@@ -24,6 +24,7 @@ from claude_agent_sdk import (
 
 from config import (
     AGENT_ALLOWED_TOOLS,
+    AGENT_CLI_PATH,
     AGENT_CWD,
     ANTHROPIC_API_KEY,
     ANTHROPIC_BASE_URL,
@@ -69,14 +70,22 @@ async def agent_stream(
     session_id = _sessions.get(user_id)
     accumulated = ""
 
-    # 构建传给 CLI 子进程的环境变量（优先使用 Tencent 内网代理）
-    agent_env: dict[str, str] = {"ANTHROPIC_API_KEY": ANTHROPIC_API_KEY}
-    if ANTHROPIC_BASE_URL:
-        agent_env["ANTHROPIC_BASE_URL"] = ANTHROPIC_BASE_URL
-    # Windows 需要明确指定 git-bash 路径，否则 Claude Code 无法启动
-    git_bash = os.getenv("CLAUDE_CODE_GIT_BASH_PATH", "")
-    if git_bash:
-        agent_env["CLAUDE_CODE_GIT_BASH_PATH"] = git_bash
+    # 构建传给 CLI 子进程的环境变量
+    # 优先从运行时环境动态读取（claude-internal 注入的临时 token），
+    # 回退到 .env 中的静态配置
+    runtime_token = (
+        os.environ.get("ANTHROPIC_AUTH_TOKEN")
+        or os.environ.get("ANTHROPIC_API_KEY")
+        or ANTHROPIC_API_KEY
+    )
+    runtime_base_url = os.environ.get("ANTHROPIC_BASE_URL") or ANTHROPIC_BASE_URL
+    runtime_custom_headers = os.environ.get("ANTHROPIC_CUSTOM_HEADERS", "")
+
+    agent_env: dict[str, str] = {"ANTHROPIC_API_KEY": runtime_token}
+    if runtime_base_url:
+        agent_env["ANTHROPIC_BASE_URL"] = runtime_base_url
+    if runtime_custom_headers:
+        agent_env["ANTHROPIC_CUSTOM_HEADERS"] = runtime_custom_headers
 
     options = ClaudeAgentOptions(
         cwd=AGENT_CWD,
@@ -86,6 +95,7 @@ async def agent_stream(
         system_prompt=SYSTEM_PROMPT,
         resume=session_id,  # None = 新 session；str = 续接
         env=agent_env,
+        cli_path=AGENT_CLI_PATH,  # 使用 claude-internal 替代 claude
     )
 
     try:
